@@ -1,0 +1,15 @@
+{
+  "name": "population-commercial-data",
+  "version": "1.0.0",
+  "description": "Data fetcher for population and commercial information",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "mysql2": "^3.6.0",
+    "package.json": "^2.0.1"
+  }
+}
