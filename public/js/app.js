@@ -59,14 +59,21 @@ function updatePaymentChart(data) {
     const canvas = document.getElementById('paymentChart');
     if (!canvas) return;
 
-    const timeLabels = [...new Set(data.map(item => 
-        formatTime(item.REG_DATE_HOUR, item.REG_DATE_MINUTE)
-    ))].sort();
+    // 데이터를 날짜와 시간으로 정렬
+    const sortedData = [...data].sort((a, b) => {
+        const aTime = `${a.REG_DATE} ${String(a.REG_DATE_HOUR).padStart(2, '0')}:${String(a.REG_DATE_MINUTE).padStart(2, '0')}`;
+        const bTime = `${b.REG_DATE} ${String(b.REG_DATE_HOUR).padStart(2, '0')}:${String(b.REG_DATE_MINUTE).padStart(2, '0')}`;
+        return new Date(bTime) - new Date(aTime);
+    });
 
-    const categories = [...new Set(data.map(item => item.RSB_LRG_CTGR))];
+    const timeLabels = [...new Set(sortedData.map(item => 
+        formatTime(item.REG_DATE_HOUR, item.REG_DATE_MINUTE)
+    ))];
+
+    const categories = [...new Set(sortedData.map(item => item.RSB_LRG_CTGR))];
     const datasets = categories.map(category => {
         const categoryData = timeLabels.map(time => {
-            const item = data.find(d => {
+            const item = sortedData.find(d => {
                 const itemTime = formatTime(d.REG_DATE_HOUR, d.REG_DATE_MINUTE);
                 return d.RSB_LRG_CTGR === category && itemTime === time;
             });
