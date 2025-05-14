@@ -22,15 +22,15 @@
             </nav>
             <div class="dashboard-controls">
                 <div class="select-container">
-                    <select id="areaSelector">
-                        <option value="all">전체 지역</option>
-                    </select>
-                </div>
-                <div class="select-container">
                     <select id="timeRange">
                         <option value="24">최근 24시간</option>
                         <option value="12">최근 12시간</option>
                         <option value="6">최근 6시간</option>
+                    </select>
+                </div>
+                <div class="select-container">
+                    <select id="areaSelector">
+                        <option value="all">전체 지역</option>
                     </select>
                 </div>
             </div>
@@ -64,29 +64,22 @@
         </div>
 
         <div class="chart-grid">
-            <div class="chart-container" id="paymentSection">
+            <div class="chart-container">
                 <div class="chart-header">
                     <h2 class="chart-title">시간대별 결제금액 추이</h2>
                 </div>
-                <canvas id="paymentChart" class="chart-canvas"></canvas>
+                <canvas id="paymentChart"></canvas>
             </div>
 
-            <div class="chart-container" id="populationSection">
+            <div class="chart-container">
                 <div class="chart-header">
-                    <h2 class="chart-title">시간대별 인구 통계</h2>
-                    <div class="chart-controls">
-                        <div class="chart-control-group">
-                            <button class="chart-control active" data-type="total">전체</button>
-                            <button class="chart-control" data-type="gender">성별</button>
-                            <button class="chart-control" data-type="age">연령대</button>
-                        </div>
-                    </div>
+                    <h2 class="chart-title">시간대별 인구수 추이</h2>
                 </div>
-                <canvas id="populationChart" class="chart-canvas"></canvas>
+                <canvas id="populationChart"></canvas>
             </div>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>
