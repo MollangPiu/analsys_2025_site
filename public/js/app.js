@@ -54,6 +54,40 @@ async function fetchData() {
     }
 }
 
+// 결제 통계 업데이트
+function updatePaymentStats(data) {
+    if (data.length === 0) return;
+
+    // 모든 카테고리의 최대 결제금액 찾기
+    const maxAmount = Math.max(...data.map(item => item.MAX_AMT));
+    
+    // 최대 결제금액 업데이트
+    const maxPaymentElement = document.getElementById('maxPayment');
+    if (maxPaymentElement) {
+        maxPaymentElement.textContent = formatNumber(maxAmount) + '원';
+    }
+
+    // 이전 시간대와 비교하여 변화율 계산
+    const latestHour = Math.max(...data.map(item => item.REG_DATE_HOUR));
+    const currentHourData = data.filter(item => item.REG_DATE_HOUR === latestHour);
+    const previousHourData = data.filter(item => item.REG_DATE_HOUR === latestHour - 1);
+
+    if (currentHourData.length > 0 && previousHourData.length > 0) {
+        const currentMax = Math.max(...currentHourData.map(item => item.MAX_AMT));
+        const previousMax = Math.max(...previousHourData.map(item => item.MAX_AMT));
+        const change = ((currentMax - previousMax) / previousMax) * 100;
+
+        const changeElement = document.getElementById('paymentChange');
+        if (changeElement) {
+            changeElement.innerHTML = `
+                <span>${change >= 0 ? '▲' : '▼'} ${Math.abs(change).toFixed(1)}%</span>
+                <span>지난 시간 대비</span>
+            `;
+            changeElement.className = `stat-change ${change >= 0 ? 'positive' : 'negative'}`;
+        }
+    }
+}
+
 // 결제 차트 업데이트
 function updatePaymentChart(data) {
     const canvas = document.getElementById('paymentChart');
@@ -65,6 +99,9 @@ function updatePaymentChart(data) {
         const bTime = `${b.REG_DATE} ${String(b.REG_DATE_HOUR).padStart(2, '0')}:${String(b.REG_DATE_MINUTE).padStart(2, '0')}`;
         return new Date(bTime) - new Date(aTime);
     });
+
+    // 최대 결제금액 통계 업데이트
+    updatePaymentStats(sortedData);
 
     const timeLabels = [...new Set(sortedData.map(item => 
         formatTime(item.REG_DATE_HOUR, item.REG_DATE_MINUTE)
