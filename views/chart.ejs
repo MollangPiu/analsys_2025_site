@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chart View</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h2>24시간 내 RSB_LRG_CTGR별 최대 결제액 추이</h2>
+  <canvas id="myChart" width="800" height="400"></canvas>
+
+  <script>
+    const rawData = <%- JSON.stringify(data) %>;
+
+    const labels = rawData.map(item => `${item.REG_DATE} ${item.REG_DATE_HOUR}:00 (${item.RSB_LRG_CTGR})`);
+    const values = rawData.map(item => item.MAX_AMT);
+
+    const ctx = document.getElementById('myChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: '최대 결제액 (MAX)',
+          data: values,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
