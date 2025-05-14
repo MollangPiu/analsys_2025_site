@@ -13,10 +13,24 @@
     <div class="dashboard">
         <header class="dashboard-header">
             <h1 class="dashboard-title">서울시 상권 모니터링 대시보드</h1>
+            <nav class="dashboard-nav">
+                <ul class="nav-list">
+                    <li class="nav-item active"><a href="#payment">결제 현황</a></li>
+                    <li class="nav-item"><a href="#population">인구 통계</a></li>
+                    <li class="nav-item"><a href="#trends">트렌드</a></li>
+                </ul>
+            </nav>
             <div class="dashboard-controls">
                 <div class="select-container">
                     <select id="areaSelector">
-                        <option value="all">강남구</option>
+                        <option value="all">전체 지역</option>
+                    </select>
+                </div>
+                <div class="select-container">
+                    <select id="timeRange">
+                        <option value="24">최근 24시간</option>
+                        <option value="12">최근 12시간</option>
+                        <option value="6">최근 6시간</option>
                     </select>
                 </div>
             </div>
@@ -36,16 +50,40 @@
                 </div>
             </div>
             <div class="stat-card">
+                <div class="stat-title">현재 인구수</div>
+                <div class="stat-value" id="currentPopulation">0명</div>
+                <div class="stat-change" id="populationChange">
+                    <span>--</span>
+                    <span>지난 시간 대비</span>
+                </div>
+            </div>
+            <div class="stat-card">
                 <div class="stat-title">업데이트 상태</div>
                 <div class="stat-value" id="updateStatus">정상</div>
             </div>
         </div>
 
-        <div class="chart-container">
-            <div class="chart-header">
-                <h2 class="chart-title">시간대별 결제금액 추이</h2>
+        <div class="chart-grid">
+            <div class="chart-container" id="paymentSection">
+                <div class="chart-header">
+                    <h2 class="chart-title">시간대별 결제금액 추이</h2>
+                </div>
+                <canvas id="paymentChart" class="chart-canvas"></canvas>
             </div>
-            <canvas id="chart" class="chart-canvas"></canvas>
+
+            <div class="chart-container" id="populationSection">
+                <div class="chart-header">
+                    <h2 class="chart-title">시간대별 인구 통계</h2>
+                    <div class="chart-controls">
+                        <div class="chart-control-group">
+                            <button class="chart-control active" data-type="total">전체</button>
+                            <button class="chart-control" data-type="gender">성별</button>
+                            <button class="chart-control" data-type="age">연령대</button>
+                        </div>
+                    </div>
+                </div>
+                <canvas id="populationChart" class="chart-canvas"></canvas>
+            </div>
         </div>
     </div>
 

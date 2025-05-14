@@ -7,11 +7,11 @@ let lastData = null;
 
 // 차트 색상
 const COLORS = {
-    "음식·음료": 'rgb(255, 99, 132)',
-    "여가·오락": 'rgb(54, 162, 235)',
-    "유통": 'rgb(255, 206, 86)',
-    "패션·뷰티": 'rgb(75, 192, 192)',
-    "의료": 'rgb(153, 102, 255)'
+    "음식·음료": '#FF3D7F',
+    "여가·오락": '#3DFFF3',
+    "유통": '#FFB800',
+    "패션·뷰티": '#9D3DFF',
+    "의료": '#3DFF8F'
 };
 
 // 초기화
@@ -110,7 +110,7 @@ function updateStats(data) {
 
 // 차트 업데이트
 function updateChart(data) {
-    const canvas = document.getElementById('chart');
+    const canvas = document.getElementById('paymentChart');
     if (!canvas) {
         console.error('차트 캔버스를 찾을 수 없습니다');
         return;
@@ -140,15 +140,19 @@ function updateChart(data) {
             label: category,
             data: categoryData,
             borderColor: COLORS[category],
-            backgroundColor: COLORS[category] + '20',
-            fill: false,
+            backgroundColor: COLORS[category] + '10',
+            fill: true,
             tension: 0.4,
-            borderWidth: 3,
+            borderWidth: 2.5,
             pointRadius: 4,
-            pointHoverRadius: 6,
+            pointHoverRadius: 7,
             pointBackgroundColor: COLORS[category],
             pointBorderColor: '#FFFFFF',
-            pointBorderWidth: 2
+            pointBorderWidth: 2,
+            pointShadowBlur: 10,
+            pointHoverBorderWidth: 3,
+            pointHoverBackgroundColor: '#FFFFFF',
+            pointHoverBorderColor: COLORS[category]
         };
     });
 
@@ -171,7 +175,8 @@ function updateChart(data) {
                     font: {
                         size: 16,
                         weight: 600
-                    }
+                    },
+                    padding: 20
                 },
                 legend: {
                     position: 'right',
@@ -182,24 +187,27 @@ function updateChart(data) {
                             weight: 500
                         },
                         usePointStyle: true,
-                        pointStyle: 'circle'
+                        pointStyle: 'circle',
+                        padding: 15
                     }
                 },
                 tooltip: {
                     mode: 'index',
                     intersect: false,
-                    backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                    backgroundColor: 'rgba(10, 11, 30, 0.95)',
                     titleColor: '#FFFFFF',
                     bodyColor: '#FFFFFF',
-                    borderColor: '#444',
+                    borderColor: 'rgba(30, 167, 253, 0.3)',
                     borderWidth: 1,
-                    padding: 10,
+                    padding: 12,
                     bodyFont: {
                         weight: 500
                     },
                     titleFont: {
                         weight: 600
                     },
+                    displayColors: true,
+                    boxPadding: 5,
                     callbacks: {
                         label: function(context) {
                             let label = context.dataset.label || '';
@@ -220,13 +228,15 @@ function updateChart(data) {
             scales: {
                 x: {
                     grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
+                        color: 'rgba(30, 167, 253, 0.05)',
+                        drawBorder: false
                     },
                     ticks: {
                         color: '#FFFFFF',
                         font: {
                             weight: 500
-                        }
+                        },
+                        padding: 10
                     },
                     title: {
                         display: true,
@@ -234,19 +244,22 @@ function updateChart(data) {
                         color: '#FFFFFF',
                         font: {
                             weight: 600
-                        }
+                        },
+                        padding: 10
                     }
                 },
                 y: {
                     beginAtZero: true,
                     grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
+                        color: 'rgba(30, 167, 253, 0.05)',
+                        drawBorder: false
                     },
                     ticks: {
                         color: '#FFFFFF',
                         font: {
                             weight: 500
                         },
+                        padding: 10,
                         callback: function(value) {
                             return new Intl.NumberFormat('ko-KR', {
                                 style: 'currency',
@@ -262,7 +275,8 @@ function updateChart(data) {
                         color: '#FFFFFF',
                         font: {
                             weight: 600
-                        }
+                        },
+                        padding: 10
                     }
                 }
             }

@@ -1,14 +1,18 @@
 :root {
-    --primary: #2196f3;
-    --success: #4caf50;
-    --warning: #ff9800;
-    --danger: #f44336;
-    --dark: #1a1a1a;
-    --darker: #141414;
-    --light-text: #e0e0e0;
-    --dim-text: #a0a0a0;
-    --card-bg: #242424;
-    --border-color: #333;
+    --primary: #00fff2;
+    --primary-glow: rgba(0, 255, 242, 0.15);
+    --success: #00ff9d;
+    --warning: #ffb300;
+    --danger: #ff3860;
+    --dark: #0a0b1e;
+    --darker: #060714;
+    --light-text: #e0e6ff;
+    --dim-text: #8790b9;
+    --card-bg: rgba(16, 18, 35, 0.95);
+    --border-color: rgba(30, 167, 253, 0.1);
+    --grid-line: rgba(30, 167, 253, 0.07);
+    --neon-glow: 0 0 10px rgba(0, 255, 242, 0.2);
+    --card-glow: 0 0 20px rgba(30, 167, 253, 0.1);
 }
 
 * {
@@ -20,14 +24,34 @@
 body {
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
     background-color: var(--dark);
+    background-image: 
+        radial-gradient(circle at 50% 0%, var(--primary-glow), transparent 60%),
+        linear-gradient(to bottom, var(--darker), var(--dark));
     color: var(--light-text);
     line-height: 1.6;
+    min-height: 100vh;
 }
 
 .dashboard {
     padding: 2rem;
     max-width: 1800px;
     margin: 0 auto;
+    position: relative;
+}
+
+.dashboard::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        var(--primary-glow),
+        transparent
+    );
+    z-index: 1;
 }
 
 .dashboard-header {
@@ -37,12 +61,25 @@ body {
     margin-bottom: 2rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--border-color);
+    position: relative;
+}
+
+.dashboard-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--primary), transparent);
 }
 
 .dashboard-title {
     font-size: 1.8rem;
     font-weight: 600;
     color: var(--light-text);
+    text-shadow: var(--neon-glow);
+    position: relative;
 }
 
 .dashboard-controls {
@@ -66,6 +103,13 @@ select {
     font-size: 0.9rem;
     cursor: pointer;
     appearance: none;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+select:hover, select:focus {
+    border-color: var(--primary);
+    box-shadow: var(--neon-glow);
 }
 
 .select-container::after {
@@ -74,19 +118,27 @@ select {
     right: 1rem;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--dim-text);
+    color: var(--primary);
     pointer-events: none;
+    font-size: 0.8rem;
 }
 
 .chart-container {
     background-color: var(--card-bg);
     border-radius: 12px;
     padding: 1.5rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--card-glow);
     margin-bottom: 2rem;
     border: 1px solid var(--border-color);
     height: 500px;
     position: relative;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.chart-container:hover {
+    box-shadow: 0 0 30px rgba(30, 167, 253, 0.2);
+    border-color: var(--primary);
 }
 
 .chart-header {
@@ -99,7 +151,8 @@ select {
 .chart-title {
     font-size: 1.2rem;
     font-weight: 500;
-    color: var(--light-text);
+    color: var(--primary);
+    text-shadow: var(--neon-glow);
 }
 
 .chart-canvas {
@@ -120,18 +173,47 @@ select {
     border-radius: 12px;
     padding: 1.5rem;
     border: 1px solid var(--border-color);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.stat-card:hover::before {
+    opacity: 1;
+}
+
+.stat-card:hover {
+    box-shadow: var(--card-glow);
+    border-color: var(--primary);
+    transform: translateY(-2px);
 }
 
 .stat-title {
     font-size: 0.9rem;
     color: var(--dim-text);
     margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .stat-value {
     font-size: 1.8rem;
     font-weight: 600;
     color: var(--light-text);
+    text-shadow: var(--neon-glow);
 }
 
 .stat-change {
@@ -140,14 +222,19 @@ select {
     gap: 0.5rem;
     margin-top: 0.5rem;
     font-size: 0.9rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    width: fit-content;
 }
 
 .stat-change.positive {
     color: var(--success);
+    background: rgba(0, 255, 157, 0.1);
 }
 
 .stat-change.negative {
     color: var(--danger);
+    background: rgba(255, 56, 96, 0.1);
 }
 
 @media (max-width: 768px) {
@@ -176,8 +263,120 @@ select {
 
 /* 다크 모드 차트 스타일 오버라이드 */
 #chart {
-    background-color: var(--card-bg);
+    background-color: transparent;
     border-radius: 8px;
     padding: 1rem;
     height: 400px !important;
+}
+
+.dashboard-nav {
+    margin: 1rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.nav-list {
+    list-style: none;
+    display: flex;
+    gap: 2rem;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-item {
+    position: relative;
+}
+
+.nav-item a {
+    color: var(--dim-text);
+    text-decoration: none;
+    padding: 0.5rem 0;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.nav-item.active a {
+    color: var(--primary);
+}
+
+.nav-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--primary);
+    box-shadow: 0 0 10px var(--primary);
+}
+
+.nav-item:hover a {
+    color: var(--light-text);
+}
+
+.chart-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.chart-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.chart-control-group {
+    display: flex;
+    gap: 0.5rem;
+    background: var(--darker);
+    padding: 0.25rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+.chart-control {
+    background: none;
+    border: none;
+    padding: 0.5rem 1rem;
+    color: var(--dim-text);
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.chart-control:hover {
+    color: var(--light-text);
+}
+
+.chart-control.active {
+    background: var(--primary-glow);
+    color: var(--primary);
+}
+
+@media (max-width: 1200px) {
+    .chart-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-nav {
+        margin: 0.5rem 0;
+    }
+
+    .nav-list {
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .chart-controls {
+        margin-top: 1rem;
+    }
+
+    .chart-control {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
 } 
