@@ -123,6 +123,8 @@ function updateTimeSeriesChart(data) {
         return;
     }
 
+    console.log('받은 데이터:', data[0]); // 데이터 형식 확인
+
     // 기존 차트 제거
     if (timeSeriesChart) {
         timeSeriesChart.destroy();
@@ -131,59 +133,66 @@ function updateTimeSeriesChart(data) {
 
     // 시간별 데이터 그룹화
     const hourlyData = {};
-    const areaData = {};
-
-    // 각 지역별 데이터 초기화
-    Object.keys(AREA_COLORS).forEach(area => {
-        areaData[area] = {};
-    });
 
     // 데이터 처리
     data.forEach(item => {
+        if (!item.DATE || !item.HOUR || !item.AREA_NM) {
+            console.warn('잘못된 데이터 형식:', item);
+            return;
+        }
+
         const date = new Date(item.DATE);
         date.setHours(parseInt(item.HOUR), 0, 0, 0); // 시간별로 그룹화
         const timeKey = date.toISOString();
+        const areaName = item.AREA_NM;
 
         if (!hourlyData[timeKey]) {
-            hourlyData[timeKey] = {
-                date: date,
-                hour: parseInt(item.HOUR)
-            };
+            hourlyData[timeKey] = {};
         }
 
-        if (!areaData[item.AREA_NM][timeKey]) {
-            areaData[item.AREA_NM][timeKey] = {
+        if (!hourlyData[timeKey][areaName]) {
+            hourlyData[timeKey][areaName] = {
                 sum: 0,
                 count: 0
             };
         }
 
         const value = (parseFloat(item.AVG_PPLTN_MIN) + parseFloat(item.AVG_PPLTN_MAX)) / 2;
-        areaData[item.AREA_NM][timeKey].sum += value;
-        areaData[item.AREA_NM][timeKey].count += 1;
+        hourlyData[timeKey][areaName].sum += value;
+        hourlyData[timeKey][areaName].count += 1;
     });
 
     // 시간 레이블 생성 (정렬된)
     const timeLabels = Object.keys(hourlyData).sort();
+    console.log('시간 레이블:', timeLabels);
+
+    // 사용 가능한 지역 목록 생성
+    const availableAreas = [...new Set(data.map(item => item.AREA_NM))];
+    console.log('사용 가능한 지역:', availableAreas);
 
     // 데이터셋 생성
     const datasets = [];
     
     if (selectedArea === 'all') {
         // 각 지역별 데이터셋 생성
-        Object.keys(AREA_COLORS).forEach(area => {
+        availableAreas.forEach(areaName => {
             const areaValues = timeLabels.map(timeKey => {
-                const hourData = areaData[area][timeKey];
+                const hourData = hourlyData[timeKey][areaName];
                 return hourData ? Math.round(hourData.sum / hourData.count) : null;
             });
 
             // null이 아닌 데이터가 있는 경우에만 데이터셋 추가
             if (areaValues.some(value => value !== null)) {
+                const color = AREA_COLORS[areaName] || {
+                    border: `rgb(${Math.random() * 255},${Math.random() * 255},${Math.random() * 255})`,
+                    background: `rgba(${Math.random() * 255},${Math.random() * 255},${Math.random() * 255},0.1)`
+                };
+
                 datasets.push({
-                    label: area,
+                    label: areaName,
                     data: areaValues,
-                    borderColor: AREA_COLORS[area].border,
-                    backgroundColor: AREA_COLORS[area].background,
+                    borderColor: color.border,
+                    backgroundColor: color.background,
                     fill: false,
                     tension: 0.1
                 });
@@ -192,19 +201,26 @@ function updateTimeSeriesChart(data) {
     } else {
         // 선택된 지역만 표시
         const areaValues = timeLabels.map(timeKey => {
-            const hourData = areaData[selectedArea][timeKey];
+            const hourData = hourlyData[timeKey]?.[selectedArea];
             return hourData ? Math.round(hourData.sum / hourData.count) : null;
         });
+
+        const color = AREA_COLORS[selectedArea] || {
+            border: CHART_COLORS.primary,
+            background: CHART_COLORS.background
+        };
 
         datasets.push({
             label: selectedArea,
             data: areaValues,
-            borderColor: AREA_COLORS[selectedArea].border,
-            backgroundColor: AREA_COLORS[selectedArea].background,
+            borderColor: color.border,
+            backgroundColor: color.background,
             fill: true,
             tension: 0.1
         });
     }
+
+    console.log('생성된 데이터셋:', datasets);
 
     // 차트 생성
     timeSeriesChart = new Chart(canvas, {
