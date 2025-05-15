@@ -13,17 +13,17 @@ let selectedCategory = 'all';
 let paymentChart = null;
 let populationChart = null;
 
-// 시간 범위 선택 이벤트 리스너
-document.getElementById('timeRange').addEventListener('change', (e) => {
-    timeRange = parseInt(e.target.value);
-    fetchData();
-});
+// 시간 범위 선택 이벤트 리스너 (삭제)
+// document.getElementById('timeRange').addEventListener('change', (e) => {
+//     timeRange = parseInt(e.target.value);
+//     fetchData();
+// });
 
-// 지역 선택 이벤트 리스너
-document.getElementById('areaSelector').addEventListener('change', (e) => {
-    selectedRegion = e.target.value;
-    fetchData();
-});
+// 지역 선택 이벤트 리스너 (삭제)
+// document.getElementById('areaSelector').addEventListener('change', (e) => {
+//     selectedRegion = e.target.value;
+//     fetchData();
+// });
 
 // 데이터 가져오기
 async function fetchData() {
@@ -34,18 +34,18 @@ async function fetchData() {
         const paymentResponse = await fetch(`/api/data?hours=${timeRange}&region=${selectedRegion}&category=${selectedCategory}`);
         if (!paymentResponse.ok) throw new Error('결제 데이터를 가져오는데 실패했습니다');
         const paymentData = await paymentResponse.json();
+        console.log('--- DEBUG: /api/data 응답 (결제 데이터): ---', JSON.parse(JSON.stringify(paymentData)));
         
-        // 인구 통계 데이터 가져오기
-        const populationResponse = await fetch('/api/population');
-        if (!populationResponse.ok) throw new Error('인구 통계 데이터를 가져오는데 실패했습니다');
-        const populationData = await populationResponse.json();
-        
-        console.log('인구 통계 데이터:', populationData);
+        // 인구 통계 데이터 가져오기 (index.html의 차트 및 카드용)
+        const populationResponse = await fetch('/api/main-page-hourly-population');
+        if (!populationResponse.ok) throw new Error('인구 통계 데이터를 가져오는데 실패했습니다 (메인 페이지용)');
+        const populationDataForStatsAndChart = await populationResponse.json();
+        console.log('--- DEBUG: /api/main-page-hourly-population 응답 (인구 통계 데이터): ---', JSON.parse(JSON.stringify(populationDataForStatsAndChart)));
         
         // 차트 업데이트
         updatePaymentChart(paymentData);
-        updatePopulationChart(populationData);
-        updatePopulationStats(populationData);
+        updatePopulationChart(populationDataForStatsAndChart);
+        updatePopulationStats(populationDataForStatsAndChart);
         
         updateStatus('마지막 업데이트: ' + new Date().toLocaleTimeString(), true);
     } catch (error) {
@@ -151,7 +151,7 @@ function updatePaymentChart(data) {
                     }
                 },
                 legend: {
-                    position: 'right',
+                    position: 'top',
                     labels: {
                         color: '#FFFFFF',
                         usePointStyle: true
@@ -198,113 +198,208 @@ function updatePaymentChart(data) {
 // 인구 통계 차트 업데이트
 function updatePopulationChart(data) {
     const canvas = document.getElementById('populationChart');
-    if (!canvas) return;
-
-    console.log('인구 통계 차트 데이터:', data);
-
-    const timeLabels = data.map(item => formatTime(item.REG_DATE_HOUR, 0));
-    const datasets = [
-        {
-            label: '시간대별 인구수',
-            data: data.map(item => Math.round(item.CNT)),
-            borderColor: '#00fff2',
-            backgroundColor: '#00fff220',
-            fill: true,
-            tension: 0.4
-        }
-    ];
+    if (!canvas) {
+        console.error('[updatePopulationChart] 인구 통계 차트의 canvas 요소를 찾을 수 없습니다!');
+        return;
+    }
 
     if (populationChart) {
-        populationChart.destroy();
+        populationChart.destroy(); // 기존 차트가 있으면 파괴
+        populationChart = null;
     }
+
+    if (!data || data.length === 0) {
+        console.warn('[updatePopulationChart] 인구 통계 데이터가 없거나 비어있습니다. 차트를 비웁니다.');
+        // 데이터가 없으면 빈 차트를 표시하거나, 사용자에게 메시지를 보여줄 수 있습니다.
+        // 여기서는 간단히 빈 차트 상태로 둡니다.
+        populationChart = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: '시간대별 인구수',
+                    data: [],
+                    borderColor: '#00fff2',
+                    backgroundColor: '#00fff220',
+                    fill: true,
+                    tension: 0.1 // 약간의 곡선
+                }]
+            },
+            options: getDefaultChartOptions('시간대별 인구수 추이 (평균)', value => formatNumber(value))
+        });
+        return;
+    }
+
+    // 데이터는 최신 시간이 먼저 오므로, 차트 표시를 위해 순서를 뒤집습니다.
+    const reversedData = [...data].reverse();
+
+    const timeLabels = reversedData.map(item => {
+        // REG_DATE_HOUR가 숫자 형태라고 가정합니다.
+        return String(item.REG_DATE_HOUR).padStart(2, '0') + ':00';
+    });
+    
+    const chartDataValues = reversedData.map(item => {
+        let countValue = item.CNT; // 기본적으로 CNT (대문자)를 기대
+        if (typeof countValue === 'undefined') {
+            countValue = item.cnt; // CNT가 없으면 cnt (소문자) 시도
+        }
+
+        const floatVal = parseFloat(countValue);
+        return Number.isNaN(floatVal) ? 0 : Math.round(floatVal);
+    });
+
+    console.log('[updatePopulationChart] Time Labels:', timeLabels);
+    console.log('[updatePopulationChart] Chart Data Values:', chartDataValues);
 
     populationChart = new Chart(canvas, {
         type: 'line',
         data: {
             labels: timeLabels,
-            datasets: datasets
+            datasets: [
+                {
+                    label: '평균 인구수', // 범례 레이블 변경
+                    data: chartDataValues,
+                    borderColor: '#00fff2',
+                    backgroundColor: '#00fff220', // 투명도 조정 가능
+                    fill: true,
+                    tension: 0.1, // 약간의 곡선, 0.4는 너무 큼
+                    pointRadius: 3, // 데이터 포인트 크기
+                    pointHoverRadius: 5 // 호버시 포인트 크기
+                }
+            ]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                title: {
-                    display: true,
-                    text: '시간대별 인구수 추이',
-                    color: '#FFFFFF',
-                    font: {
-                        size: 16,
-                        weight: 600
-                    }
-                },
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.dataset.label}: ${formatNumber(context.parsed.y)}명`;
-                        }
-                    }
+        options: getDefaultChartOptions('시간대별 인구수 추이 (평균)', value => formatNumber(value))
+    });
+}
+
+// 기본 차트 옵션을 생성하는 헬퍼 함수
+function getDefaultChartOptions(titleText, yTicksCallback) {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: {
+                display: true,
+                text: titleText,
+                color: '#FFFFFF',
+                font: {
+                    size: 16,
+                    weight: '600'
                 }
             },
-            scales: {
-                x: {
-                    reverse: true,
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                    },
-                    ticks: {
-                        color: '#FFFFFF'
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                    },
-                    ticks: {
-                        color: '#FFFFFF',
-                        callback: function(value) {
-                            return formatNumber(value) + '명';
-                        }
+            legend: {
+                position: 'top', // 범례 위치 변경
+                labels: {
+                    color: '#FFFFFF',
+                    usePointStyle: true
+                }
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                callbacks: {
+                    label: function(context) {
+                        return `${context.dataset.label}: ${formatNumber(context.parsed.y)}`;
                     }
                 }
             }
+        },
+        scales: {
+            x: {
+                // reverse: false, // 데이터 자체를 뒤집었으므로 false
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                },
+                ticks: {
+                    color: '#FFFFFF'
+                }
+            },
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                },
+                ticks: {
+                    color: '#FFFFFF',
+                    callback: yTicksCallback // 콜백 함수 사용
+                }
+            }
         }
-    });
+    };
 }
 
 // 인구 통계 상태 업데이트
 function updatePopulationStats(data) {
-    if (data.length === 0) return;
+    const currentPopulationElement = document.getElementById('currentPopulation');
+    const populationChangeElement = document.getElementById('populationChange');
 
-    const latest = data[0];
-    const currentPopulation = Math.round(latest.CNT);
-    
-    // 현재 인구수 업데이트
-    const populationElement = document.getElementById('currentPopulation');
-    if (populationElement) {
-        populationElement.textContent = formatNumber(currentPopulation) + '명';
+    function changeElement(element, value, changePercent) {
+      if (element) {
+        element.innerHTML = `
+          <span>${value}</span>
+          ${changePercent !== null ? `<span class="stat-change ${changePercent >= 0 ? 'positive' : 'negative'}">${changePercent >= 0 ? '▲' : '▼'} ${Math.abs(changePercent).toFixed(1)}%</span>` : ''}
+        `;
+      }
     }
 
-    // 변화율 계산 및 업데이트
-    if (data.length >= 2) {
-        const previous = data[1];
-        const previousPopulation = Math.round(previous.CNT);
-        const change = ((currentPopulation - previousPopulation) / previousPopulation) * 100;
-        
-        const changeElement = document.getElementById('populationChange');
-        if (changeElement) {
-            changeElement.innerHTML = `
-                <span>${change >= 0 ? '▲' : '▼'} ${Math.abs(change).toFixed(1)}%</span>
-                <span>지난 시간 대비</span>
-            `;
-            changeElement.className = `stat-change ${change >= 0 ? 'positive' : 'negative'}`;
+    if (!data || data.length === 0) {
+        if (currentPopulationElement) currentPopulationElement.textContent = 'N/A';
+        if (populationChangeElement) populationChangeElement.innerHTML = '<span>데이터 없음</span>';
+        console.warn('[updatePopulationStats] 인구 통계 데이터가 없어 숫자 업데이트 불가.');
+        return;
+    }
+
+    // 데이터는 최신 시간이 배열의 처음 (data[0])
+    // 현재 인구수 (가장 최신 데이터의 CNT 값)
+    let currentPop = 0;
+    if (data[0]) {
+        const latestDataPoint = data[0];
+        let countValue = latestDataPoint.CNT;
+        if (typeof countValue === 'undefined') {
+            countValue = latestDataPoint.cnt;
         }
+        const floatVal = parseFloat(countValue);
+        currentPop = Number.isNaN(floatVal) ? 0 : Math.round(floatVal);
+    }
+    
+    if (currentPopulationElement) {
+        currentPopulationElement.textContent = formatNumber(currentPop);
+    }
+    console.log(`[updatePopulationStats] 현재 인구수 카드 업데이트: ${formatNumber(currentPop)}`);
+
+    // 변화율 계산 (예: 현재 값과 그 이전 값 비교)
+    let previousPop = 0;
+    let changePercent = null;
+
+    if (data.length > 1) {
+        const previousDataPoint = data[1]; // 그 다음 최신 데이터
+        let countValuePrev = previousDataPoint.CNT;
+        if (typeof countValuePrev === 'undefined') {
+            countValuePrev = previousDataPoint.cnt;
+        }
+        const floatValPrev = parseFloat(countValuePrev);
+        previousPop = Number.isNaN(floatValPrev) ? 0 : Math.round(floatValPrev);
+
+        if (previousPop !== 0) { // 0으로 나누는 것 방지
+            changePercent = ((currentPop - previousPop) / previousPop) * 100;
+        } else if (currentPop > 0) { // 이전이 0인데 현재 0보다 크면 무한대 증가 대신 100%로 표시 (혹은 다른 방식)
+            changePercent = 100.0; 
+        }
+    }
+    
+    if (populationChangeElement) {
+        if (changePercent !== null) {
+            populationChangeElement.innerHTML = `
+                <span>${changePercent >= 0 ? '▲' : '▼'} ${Math.abs(changePercent).toFixed(1)}%</span>
+                <span>이전 시간 대비</span>
+            `;
+            populationChangeElement.className = `stat-change ${changePercent >= 0 ? 'positive' : 'negative'}`;
+        } else {
+            populationChangeElement.innerHTML = '<span>변화율 계산 불가</span>';
+            populationChangeElement.className = 'stat-change';
+        }
+        console.log(`[updatePopulationStats] 인구 변화율 업데이트: ${changePercent !== null ? changePercent.toFixed(1) + '%' : 'N/A'}`);
     }
 }
 
