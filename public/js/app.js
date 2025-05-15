@@ -170,6 +170,7 @@ function updatePaymentChart(data) {
             },
             scales: {
                 x: {
+                    reverse: true,
                     grid: {
                         color: 'rgba(255, 255, 255, 0.1)'
                     },
@@ -252,6 +253,7 @@ function updatePopulationChart(data) {
             },
             scales: {
                 x: {
+                    reverse: true,
                     grid: {
                         color: 'rgba(255, 255, 255, 0.1)'
                     },
